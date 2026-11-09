@@ -24,6 +24,9 @@ export function asIds(value: unknown): string[] {
   return []
 }
 
-export function formatWhen(iso: string) {
-  return new Intl.DateTimeFormat('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso))
+const dateLocales: Record<string, string> = { ru: 'ru-RU', en: 'en-GB', fi: 'fi-FI' }
+
+export function formatWhen(iso: string, language = 'ru') {
+  const locale = dateLocales[language.toLowerCase().slice(0, 2)] ?? 'ru-RU'
+  return new Intl.DateTimeFormat(locale, { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date(iso))
 }

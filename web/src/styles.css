@@ -189,7 +189,35 @@ textarea { min-height: 9rem; resize: vertical; }
   max-width: 16ch;
 }
 
-.switcher { margin-top: 1rem; }
+.margin-out.foot {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.switcher {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem 0.5rem;
+}
+
+.cover .switcher { margin-bottom: 1.2rem; }
+
+.switcher button {
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--num);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  padding: 0.1rem 0;
+  box-shadow: none;
+}
+
+.switcher button[aria-pressed='true'] {
+  color: var(--mark);
+  box-shadow: inset 0 -2px 0 var(--mark);
+}
 
 .name-slip {
   margin: auto;
@@ -349,6 +377,7 @@ textarea { min-height: 9rem; resize: vertical; }
   .margin nav { flex-direction: row; }
   .margin a { white-space: nowrap; }
   .margin-out { margin-top: 0; }
+  .margin-out.foot { flex-direction: row; align-items: center; }
   .page { margin-left: 0; }
 }
 

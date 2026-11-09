@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { PenLine } from '../components/Marks.tsx'
 
 export type WordCard = { id: string; term: string; translation: string }
@@ -41,6 +42,7 @@ function readDraft(sessionId: string, totalMs?: number): Draft {
 }
 
 export function LineExercise({ sessionId, words, prompt, totalMs, perWordMs, onSubmit, submitting }: LineProps) {
+  const { t } = useTranslation()
   const [draft, setDraft] = useState(() => readDraft(sessionId, totalMs))
   const [now, setNow] = useState(Date.now())
   const draftRef = useRef(draft)
@@ -119,7 +121,7 @@ export function LineExercise({ sessionId, words, prompt, totalMs, perWordMs, onS
   }, [perWordMs, sessionId])
 
   const word = words[draft.index]
-  if (!word) return <p className="meta">Сдаю тетрадь…</p>
+  if (!word) return <p className="meta">{t('exercise.handingIn')}</p>
   const hero = prompt === 'term' ? word.term : word.translation
   const progress = perWordMs
     ? Math.max(0, perWordMs - (now - draft.shownAt)) / perWordMs
@@ -136,12 +138,12 @@ export function LineExercise({ sessionId, words, prompt, totalMs, perWordMs, onS
       }}
     >
       <p className="meta">
-        Слово {draft.index + 1} из {words.length}
+        {t('exercise.progress', { current: draft.index + 1, total: words.length })}
       </p>
       <h2 className="word-hero">{hero}</h2>
       <PenLine progress={progress} />
       <label className="label" htmlFor="answer">
-        {prompt === 'term' ? 'Перевод' : 'Слово'}
+        {prompt === 'term' ? t('exercise.translation') : t('exercise.word')}
       </label>
       <input
         id="answer"
@@ -156,13 +158,13 @@ export function LineExercise({ sessionId, words, prompt, totalMs, perWordMs, onS
       />
       <div className="row">
         <button type="submit" disabled={submitting}>
-          {draft.index + 1 === words.length ? 'Сдать тетрадь' : 'Дальше'}
+          {draft.index + 1 === words.length ? t('exercise.handIn') : t('exercise.next')}
         </button>
         <button type="button" className="quiet" disabled={submitting} onClick={() => advance('')}>
-          Не знаю
+          {t('exercise.skip')}
         </button>
         <button type="button" className="quiet" disabled={submitting} onClick={() => finish(rest(''))}>
-          Сдаться
+          {t('exercise.giveUp')}
         </button>
       </div>
     </form>
@@ -189,6 +191,7 @@ export function PairsExercise({
   onSubmit: (answers: TypedAnswer[]) => void
   submitting: boolean
 }) {
+  const { t } = useTranslation()
   const [terms] = useState(() => shuffle(words))
   const [translations] = useState(() => shuffle(words))
   const [termId, setTermId] = useState<string | null>(null)
@@ -237,7 +240,7 @@ export function PairsExercise({
 
   return (
     <div className="sheet">
-      <p className="meta">Соедините слово и перевод</p>
+      <p className="meta">{t('exercise.match')}</p>
       <div className="pair-grid">
         <div>
           {terms.map((word) => (

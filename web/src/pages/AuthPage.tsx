@@ -1,27 +1,31 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate } from 'react-router-dom'
 import { useAuth } from '../auth.tsx'
+import { LanguageSwitcher } from '../components/LanguageSwitcher.tsx'
+import { useFault } from '../i18n/fault.ts'
 import { supabase, supabaseConfigured } from '../lib/supabase.ts'
 
 export function AuthPage() {
+  const { t } = useTranslation()
   const { session } = useAuth()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [name, setName] = useState('')
-  const [error, setError] = useState('')
-  const [nameError, setNameError] = useState('')
+  const formError = useFault()
+  const nameError = useFault()
   const [pending, setPending] = useState(false)
   const [naming, setNaming] = useState(false)
-  const [notice, setNotice] = useState('')
+  const [notice, setNotice] = useState(false)
 
   if (session) return <Navigate to="/" replace />
 
   async function submit(event: FormEvent) {
     event.preventDefault()
-    setError('')
-    setNotice('')
+    formError.clear()
+    setNotice(false)
     if (!supabaseConfigured) {
-      setError('Нет адреса Supabase. Заполните web/.env.local и перезапустите приложение.')
+      formError.local('auth.noSupabase')
       return
     }
     const cleanEmail = email.trim()
@@ -29,18 +33,18 @@ export function AuthPage() {
     const { data: taken, error: lookupError } = await supabase.rpc('email_registered', { target: cleanEmail })
     if (lookupError) {
       setPending(false)
-      setError('Не получилось проверить почту.')
+      formError.local('auth.emailCheckFailed')
       return
     }
     if (taken) {
       const { error: signError } = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
       setPending(false)
-      if (signError) setError('Почта или пароль не подходят.')
+      if (signError) formError.local('auth.badCredentials')
       return
     }
     setPending(false)
     setName('')
-    setNameError('')
+    nameError.clear()
     setNaming(true)
   }
 
@@ -48,20 +52,20 @@ export function AuthPage() {
     event.preventDefault()
     const cleanName = name.trim()
     if (cleanName.length < 2 || cleanName.length > 24) {
-      setNameError('Имя нужно от 2 до 24 знаков.')
+      nameError.local('auth.nameLength')
       return
     }
-    setNameError('')
+    nameError.clear()
     setPending(true)
     const { data: nameTaken, error: nameLookupError } = await supabase.rpc('name_registered', { target: cleanName })
     if (nameLookupError) {
       setPending(false)
-      setNameError('Не получилось проверить имя.')
+      nameError.local('auth.nameCheckFailed')
       return
     }
     if (nameTaken) {
       setPending(false)
-      setNameError('Такое имя уже занято.')
+      nameError.local('auth.nameTaken')
       return
     }
     const cleanEmail = email.trim()
@@ -74,15 +78,15 @@ export function AuthPage() {
       setPending(false)
       const message = signError.message.toLowerCase()
       if (message.includes('занято')) {
-        setNameError('Такое имя уже занято.')
+        nameError.local('auth.nameTaken')
         return
       }
       if (message.includes('already')) {
         setNaming(false)
-        setError('Эта почта уже занята.')
+        formError.local('auth.emailTaken')
         return
       }
-      setNameError('Не получилось завести тетрадь. Проверьте имя.')
+      nameError.local('auth.signupFailed')
       return
     }
     if (data.session) {
@@ -93,17 +97,18 @@ export function AuthPage() {
     setPending(false)
     if (signInError) {
       setNaming(false)
-      setNotice('Письмо с подтверждением отправлено. Откройте его и вернитесь.')
+      setNotice(true)
     }
   }
 
   return (
     <main className="page cover">
-      <p className="eyebrow">Тетрадь</p>
+      <LanguageSwitcher />
+      <p className="eyebrow">{t('auth.eyebrow')}</p>
       <h1>Wordoria</h1>
-      <p className="cover-line">Для чужих слов, которые ещё не стали своими.</p>
+      <p className="cover-line">{t('auth.tagline')}</p>
       <form className="sheet" onSubmit={(event) => void submit(event)}>
-        <label className="label" htmlFor="email">Почта</label>
+        <label className="label" htmlFor="email">{t('auth.email')}</label>
         <input
           id="email"
           className="plain-input"
@@ -113,7 +118,7 @@ export function AuthPage() {
           onChange={(event) => setEmail(event.target.value)}
           required
         />
-        <label className="label" htmlFor="password">Пароль</label>
+        <label className="label" htmlFor="password">{t('auth.password')}</label>
         <input
           id="password"
           className="plain-input"
@@ -124,14 +129,14 @@ export function AuthPage() {
           onChange={(event) => setPassword(event.target.value)}
           required
         />
-        {error ? <p className="error-line" role="alert">{error}</p> : null}
-        {notice ? <p className="meta">{notice}</p> : null}
-        <button type="submit" disabled={pending}>Открыть</button>
+        {formError.text ? <p className="error-line" role="alert">{formError.text}</p> : null}
+        {notice ? <p className="meta">{t('auth.confirmSent')}</p> : null}
+        <button type="submit" disabled={pending}>{t('auth.open')}</button>
       </form>
       {naming ? (
         <NameSlip
           name={name}
-          error={nameError}
+          error={nameError.text}
           pending={pending}
           onName={setName}
           onClose={() => {
@@ -159,6 +164,7 @@ function NameSlip({
   onClose: () => void
   onSubmit: (event: FormEvent) => void
 }) {
+  const { t } = useTranslation()
   const dialogRef = useRef<HTMLDialogElement>(null)
   const nameRef = useRef<HTMLInputElement>(null)
 
@@ -189,9 +195,9 @@ function NameSlip({
       }}
     >
       <form className="name-card" onSubmit={onSubmit}>
-        <p className="eyebrow">Новая тетрадь</p>
-        <h2>Как подписать</h2>
-        <label className="label" htmlFor="name">Имя на обложке</label>
+        <p className="eyebrow">{t('auth.newBook')}</p>
+        <h2>{t('auth.howToSign')}</h2>
+        <label className="label" htmlFor="name">{t('auth.coverName')}</label>
         <input
           ref={nameRef}
           id="name"
@@ -205,8 +211,8 @@ function NameSlip({
         />
         {error ? <p className="error-line" role="alert">{error}</p> : null}
         <div className="name-actions">
-          <button type="submit" disabled={pending}>Завести тетрадь</button>
-          <button type="button" className="quiet" onClick={requestClose} disabled={pending}>Не сейчас</button>
+          <button type="submit" disabled={pending}>{t('auth.createBook')}</button>
+          <button type="button" className="quiet" onClick={requestClose} disabled={pending}>{t('auth.notNow')}</button>
         </div>
       </form>
     </dialog>

@@ -1,3 +1,4 @@
+import i18n from '../i18n/index.ts'
 import { supabase } from './supabase.ts'
 
 export class ApiError extends Error {
@@ -21,7 +22,7 @@ export async function callApi<T>(body: Record<string, unknown>): Promise<T> {
         if (parseError instanceof ApiError) throw parseError
       }
     }
-    throw new ApiError('Сервер упражнения не отвечает')
+    throw new ApiError(i18n.t('errors.SERVER'), 'SERVER')
   }
   const payload = data as { error?: { message?: string; code?: string } }
   if (payload?.error?.message) throw new ApiError(payload.error.message, payload.error.code)

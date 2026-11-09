@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useParams } from 'react-router-dom'
 import { useAuth } from '../auth.tsx'
 import { Stamp } from '../components/Marks.tsx'
 import { GAMES } from '../domain.ts'
 import { GameExercise, type TypedAnswer, type WordCard } from '../exercise/exercises.tsx'
+import { useFault } from '../i18n/fault.ts'
+import { placeContext } from '../i18n/index.ts'
+import { gameName } from '../i18n/labels.ts'
 import { ApiError, callApi } from '../lib/api.ts'
 import { supabase } from '../lib/supabase.ts'
 import { asIds } from '../lib/words.ts'
@@ -26,6 +30,7 @@ type PlayerRow = {
 type AnswerRow = { word_id: string; correct: boolean; time_ms: number }
 
 export function SessionPage() {
+  const { t, i18n } = useTranslation()
   const { sessionId = '' } = useParams()
   const { session, refresh } = useAuth()
   const [phase, setPhase] = useState<Phase>('loading')
@@ -35,7 +40,7 @@ export function SessionPage() {
   const [me, setMe] = useState<PlayerRow | null>(null)
   const [board, setBoard] = useState<{ name: string; row: PlayerRow }[]>([])
   const [answers, setAnswers] = useState<AnswerRow[]>([])
-  const [error, setError] = useState('')
+  const fault = useFault()
   const [pending, setPending] = useState(false)
 
   const load = useCallback(async () => {
@@ -74,7 +79,7 @@ export function SessionPage() {
         players
           .slice()
           .sort((a, b) => (a.place ?? 99) - (b.place ?? 99))
-          .map((row) => ({ name: names.get(row.player_id) ?? 'Игрок', row })),
+          .map((row) => ({ name: names.get(row.player_id) ?? '', row })),
       )
       setPhase('result')
       return
@@ -97,7 +102,7 @@ export function SessionPage() {
     if (sessionStorage.getItem(sentKey)) return
     sessionStorage.setItem(sentKey, '1')
     setPending(true)
-    setError('')
+    fault.clear()
     try {
       await callApi({ action: 'session-finish', sessionId, answers: typed })
       await refresh()
@@ -108,46 +113,49 @@ export function SessionPage() {
         return
       }
       sessionStorage.removeItem(sentKey)
-      setError(caught instanceof ApiError ? caught.message : 'Ответ не принят')
+      fault.caught(caught, 'session.answerFailed')
     } finally {
       setPending(false)
     }
   }
 
   const game = GAMES.find((item) => item.id === gameId)
-  if (phase === 'loading') return <p className="meta">Открываю упражнение…</p>
-  if (phase === 'missing') return <p className="error-line">Упражнение не найдено.</p>
+  const place = me?.place ?? 0
+  if (phase === 'loading') return <p className="meta">{t('session.opening')}</p>
+  if (phase === 'missing') return <p className="error-line">{t('session.missing')}</p>
 
   return (
     <>
-      <p className="eyebrow">{game?.name ?? 'Упражнение'}</p>
-      <p className="meta">{chargedIv === 0 ? 'Бесплатно' : `Списано ${chargedIv} ИВ`}</p>
-      {error ? <p className="error-line" role="alert">{error}</p> : null}
+      <p className="eyebrow">{game ? gameName(t, game.id, game.name) : t('session.fallback')}</p>
+      <p className="meta">{chargedIv === 0 ? t('session.free') : t('session.charged', { iv: chargedIv })}</p>
+      {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
       {phase === 'play' ? (
         <GameExercise sessionId={sessionId} gameId={gameId} words={words} onSubmit={(typed) => void submit(typed)} submitting={pending} />
       ) : null}
       {phase === 'waiting' ? (
         <>
-          <Stamp tone="ok">Ждём</Stamp>
-          <p>Ответы записаны. Ждём, пока закончат остальные.</p>
+          <Stamp tone="ok">{t('session.waitingStamp')}</Stamp>
+          <p>{t('session.waiting')}</p>
         </>
       ) : null}
       {phase === 'result' && me ? (
         <>
           <Stamp tone={(me.errors ?? 0) === 0 ? 'ok' : 'bad'}>
-            {board.length > 1 ? `${me.place} место` : 'Готово'}
+            {board.length > 1
+              ? t('session.place', { count: place, context: placeContext(place, i18n.language) })
+              : t('session.done')}
           </Stamp>
           <p className="word-hero">{me.points ?? 0}</p>
           <p>
-            баллов · +{me.iv_gain ?? 0} ИВ · +{me.xp_gain ?? 0} к уровню
+            {t('session.pointsWord', { count: me.points ?? 0 })} · {t('session.gains', { iv: me.iv_gain ?? 0, xp: me.xp_gain ?? 0 })}
             {me.multiplier && me.multiplier !== 1 ? ` · ×${me.multiplier}` : ''}
           </p>
           {board.length > 1 ? (
             <ul className="contents">
               {board.map((entry) => (
                 <li key={entry.row.player_id}>
-                  <span>{entry.row.place}. {entry.name}</span>
-                  <span className="meta">{entry.row.points} баллов</span>
+                  <span>{entry.row.place}. {entry.name || t('session.player')}</span>
+                  <span className="meta">{t('session.boardPoints', { count: entry.row.points ?? 0 })}</span>
                 </li>
               ))}
             </ul>
@@ -158,12 +166,12 @@ export function SessionPage() {
               const ok = answer?.correct
               return (
                 <li key={word.id} className={ok ? 'mark-ok' : 'mark-bad'}>
-                  {word.term} — {word.translation} {ok ? 'верно' : 'мимо'}
+                  {word.term} — {word.translation} {ok ? t('session.right') : t('session.wrong')}
                 </li>
               )
             })}
           </ul>
-          <Link className="button" to="/">На стол</Link>
+          <Link className="button" to="/">{t('play.back')}</Link>
         </>
       ) : null}
     </>

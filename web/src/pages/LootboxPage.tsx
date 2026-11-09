@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth.tsx'
 import { Stamp } from '../components/Marks.tsx'
 import { ECONOMY } from '../domain.ts'
 import { LineExercise, type TypedAnswer, type WordCard } from '../exercise/exercises.tsx'
-import { ApiError, callApi } from '../lib/api.ts'
+import { useFault } from '../i18n/fault.ts'
+import { skinName } from '../i18n/labels.ts'
+import { callApi } from '../lib/api.ts'
 import { supabase } from '../lib/supabase.ts'
 
 type Box = { id: string; status: 'sealed' | 'opened'; reward: Reward | null }
@@ -13,14 +16,16 @@ type Reward =
   | { type: 'xp'; amount: number }
   | { type: 'subscription_self'; days: number; until: string }
   | { type: 'subscription_gift'; itemId: string; days: number }
+type Note = { passed: boolean; reward: Reward | null }
 
 export function LootboxPage() {
+  const { t } = useTranslation()
   const { profile, refresh, session } = useAuth()
   const [boxes, setBoxes] = useState<Box[]>([])
   const [challenge, setChallenge] = useState<{ lootboxId: string; words: WordCard[]; maxTimeMs: number } | null>(null)
-  const [error, setError] = useState('')
+  const fault = useFault()
   const [pending, setPending] = useState(false)
-  const [note, setNote] = useState('')
+  const [note, setNote] = useState<Note | null>(null)
 
   async function load() {
     if (!session) return
@@ -37,22 +42,22 @@ export function LootboxPage() {
   }, [session])
 
   async function buy() {
-    setError('')
+    fault.clear()
     setPending(true)
     try {
       await callApi({ action: 'lootbox-buy' })
       await refresh()
       await load()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Конверт не куплен')
+      fault.caught(caught, 'lootbox.buyFailed')
     } finally {
       setPending(false)
     }
   }
 
   async function open(lootboxId: string) {
-    setError('')
-    setNote('')
+    fault.clear()
+    setNote(null)
     try {
       const started = await callApi<{
         lootboxId: string
@@ -61,14 +66,14 @@ export function LootboxPage() {
       }>({ action: 'lootbox-start', lootboxId })
       setChallenge({ lootboxId: started.lootboxId, words: started.input.words, maxTimeMs: started.limits.maxTimeMs })
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Испытание не началось')
+      fault.caught(caught, 'lootbox.startFailed')
     }
   }
 
   async function finish(answers: TypedAnswer[]) {
     if (!challenge) return
     setPending(true)
-    setError('')
+    fault.clear()
     try {
       const result = await callApi<{ passed: boolean; reward: Reward | null }>({
         action: 'lootbox-finish',
@@ -76,28 +81,40 @@ export function LootboxPage() {
         answers,
       })
       setChallenge(null)
-      setNote(result.passed && result.reward ? rewardText(result.reward) : 'Мимо лимита. Конверт ещё закрыт.')
+      setNote({ passed: Boolean(result.passed && result.reward), reward: result.reward })
       await refresh()
       await load()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Ответ не принят')
+      fault.caught(caught, 'lootbox.answerFailed')
     } finally {
       setPending(false)
     }
+  }
+
+  function rewardText(reward: Reward | null) {
+    if (!reward) return t('lootbox.empty')
+    if (reward.type === 'skin') return t('lootbox.rewardSkin', { name: skinName(t, reward.skinId, reward.name) })
+    if (reward.type === 'money') return t('lootbox.rewardMoney', { amount: reward.amount })
+    if (reward.type === 'xp') return t('lootbox.rewardXp', { count: reward.amount })
+    if (reward.type === 'subscription_self') return t('lootbox.subscriptionDays', { count: reward.days })
+    return t('lootbox.giftDays', { count: reward.days })
   }
 
   const canBuy = (profile?.iv ?? 0) >= ECONOMY.lootboxPriceIv
 
   return (
     <>
-      <p className="eyebrow">Конверт</p>
-      <p className="cover-line">Внутри скин, деньги, уровень или подписка.</p>
+      <p className="eyebrow">{t('lootbox.eyebrow')}</p>
+      <p className="cover-line">{t('lootbox.inside')}</p>
       <p className="meta">
-        Чтобы открыть, уложитесь в {ECONOMY.lootboxMaxErrors} ошибку и {ECONOMY.lootboxMaxTimeMs / 1000} секунд.
+        {t('lootbox.limit', {
+          errors: t('lootbox.errorCount', { count: ECONOMY.lootboxMaxErrors }),
+          seconds: t('lootbox.secondCount', { count: ECONOMY.lootboxMaxTimeMs / 1000 }),
+        })}
       </p>
-      {error ? <p className="error-line" role="alert">{error}</p> : null}
-      {note ? <Stamp tone={note.startsWith('Мимо') ? 'bad' : 'ok'}>{note.startsWith('Мимо') ? 'Мимо' : 'Открыт'}</Stamp> : null}
-      {note && !note.startsWith('Мимо') ? <p>{note}</p> : null}
+      {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
+      {note ? <Stamp tone={note.passed ? 'ok' : 'bad'}>{note.passed ? t('lootbox.opened') : t('lootbox.missed')}</Stamp> : null}
+      {note?.passed ? <p>{rewardText(note.reward)}</p> : null}
       {challenge ? (
         <LineExercise
           sessionId={challenge.lootboxId}
@@ -110,33 +127,24 @@ export function LootboxPage() {
       ) : (
         <div className="row">
           <button type="button" disabled={!canBuy || pending} onClick={() => void buy()}>
-            {canBuy ? `Купить конверт за ${ECONOMY.lootboxPriceIv} ИВ` : `Нужно ${ECONOMY.lootboxPriceIv} ИВ`}
+            {canBuy ? t('lootbox.buy', { iv: ECONOMY.lootboxPriceIv }) : t('lootbox.need', { iv: ECONOMY.lootboxPriceIv })}
           </button>
         </div>
       )}
       <ul className="contents">
         {boxes.map((box) => (
           <li key={box.id}>
-            <span>{box.status === 'sealed' ? 'Закрыт' : rewardText(box.reward)}</span>
+            <span>{box.status === 'sealed' ? t('lootbox.sealed') : rewardText(box.reward)}</span>
             {box.status === 'sealed' && !challenge ? (
               <button type="button" className="quiet" onClick={() => void open(box.id)}>
-                Открыть
+                {t('lootbox.open')}
               </button>
             ) : (
-              <span className="meta">{box.status === 'opened' ? 'вскрыт' : ''}</span>
+              <span className="meta">{box.status === 'opened' ? t('lootbox.openedMeta') : ''}</span>
             )}
           </li>
         ))}
       </ul>
     </>
   )
-}
-
-function rewardText(reward: Reward | null) {
-  if (!reward) return 'Пусто'
-  if (reward.type === 'skin') return `Скин «${reward.name}»`
-  if (reward.type === 'money') return `${reward.amount} денег`
-  if (reward.type === 'xp') return `${reward.amount} пунктов уровня`
-  if (reward.type === 'subscription_self') return `Подписка на ${reward.days} дней`
-  return `Подарок: подписка на ${reward.days} дней`
 }

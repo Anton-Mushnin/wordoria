@@ -1,27 +1,20 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { useAuth } from '../auth.tsx'
-import { ApiError, callApi } from '../lib/api.ts'
+import { useFault } from '../i18n/fault.ts'
+import { currencyLabel, ledgerLabel } from '../i18n/labels.ts'
+import { callApi } from '../lib/api.ts'
 import { supabase } from '../lib/supabase.ts'
-
-const labels: Record<string, string> = {
-  exercise_fee: 'Плата за упражнение',
-  exercise_reward: 'Награда за упражнение',
-  exercise_xp: 'Пункты уровня',
-  transfer_out: 'Перевод',
-  transfer_in: 'Входящий перевод',
-  lootbox_purchase: 'Конверт',
-  lootbox_money: 'Деньги из конверта',
-  lootbox_xp: 'Уровень из конверта',
-}
 
 type Entry = { id: string; kind: string; currency: string; amount: number; created_at: string }
 
 export function WalletPage() {
+  const { t } = useTranslation()
   const { profile, refresh, session } = useAuth()
   const [name, setName] = useState('')
   const [amount, setAmount] = useState('10')
   const [entries, setEntries] = useState<Entry[]>([])
-  const [error, setError] = useState('')
+  const fault = useFault()
   const [pending, setPending] = useState(false)
 
   async function load() {
@@ -41,10 +34,10 @@ export function WalletPage() {
 
   async function transfer(event: FormEvent) {
     event.preventDefault()
-    setError('')
+    fault.clear()
     const sum = Number(amount)
     if (!name.trim() || !Number.isInteger(sum) || sum <= 0) {
-      setError('Нужны имя и целое число ИВ.')
+      fault.local('wallet.badAmount')
       return
     }
     setPending(true)
@@ -54,7 +47,7 @@ export function WalletPage() {
       await refresh()
       await load()
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Перевод не прошёл')
+      fault.caught(caught, 'wallet.failed')
     } finally {
       setPending(false)
     }
@@ -62,28 +55,28 @@ export function WalletPage() {
 
   return (
     <>
-      <p className="eyebrow">Перевод ИВ</p>
-      <p className="cover-line">На странице {profile?.iv ?? 0} ИВ.</p>
+      <p className="eyebrow">{t('wallet.eyebrow')}</p>
+      <p className="cover-line">{t('wallet.balance', { iv: profile?.iv ?? 0 })}</p>
       <form className="sheet" onSubmit={(event) => void transfer(event)}>
-        <label className="label" htmlFor="to">Имя игрока</label>
+        <label className="label" htmlFor="to">{t('wallet.name')}</label>
         <input id="to" className="plain-input" value={name} onChange={(event) => setName(event.target.value)} />
-        <label className="label" htmlFor="amount">Сколько ИВ</label>
+        <label className="label" htmlFor="amount">{t('wallet.amount')}</label>
         <input id="amount" className="plain-input" inputMode="numeric" value={amount} onChange={(event) => setAmount(event.target.value)} />
-        {error ? <p className="error-line" role="alert">{error}</p> : null}
-        <button type="submit" disabled={pending}>Перевести</button>
+        {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
+        <button type="submit" disabled={pending}>{t('wallet.send')}</button>
       </form>
       <ul className="ledger">
         {entries.map((entry) => (
           <li key={entry.id}>
-            <span>{labels[entry.kind] ?? entry.kind}</span>
+            <span>{ledgerLabel(t, entry.kind)}</span>
             <span className="amount">
               {entry.amount > 0 ? '+' : ''}
-              {entry.amount} {entry.currency === 'iv' ? 'ИВ' : entry.currency === 'xp' ? 'ур.' : 'денег'}
+              {entry.amount} {currencyLabel(t, entry.currency)}
             </span>
           </li>
         ))}
       </ul>
-      {entries.length === 0 ? <p className="meta">Движений пока нет.</p> : null}
+      {entries.length === 0 ? <p className="meta">{t('wallet.empty')}</p> : null}
     </>
   )
 }

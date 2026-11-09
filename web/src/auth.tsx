@@ -55,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     ])
     if (error || !row) {
       setProfile(null)
-      setProfileError('Не удалось открыть страницу игрока')
+      setProfileError('PROFILE')
       return
     }
     setProfileError(null)

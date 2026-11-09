@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Navigate, Route, Routes } from 'react-router-dom'
 import { useAuth } from './auth.tsx'
 import { Shell } from './components/Shell.tsx'
@@ -12,14 +13,17 @@ import { SessionPage } from './pages/SessionPage.tsx'
 import { WalletPage } from './pages/WalletPage.tsx'
 
 function Private({ children }: { children: ReactNode }) {
+  const { t } = useTranslation()
   const { ready, session, profile, profileError, refresh } = useAuth()
-  if (!ready || (session && !profile && !profileError)) return <p className="page meta">Открываю тетрадь…</p>
+  if (!ready || (session && !profile && !profileError)) return <p className="page meta">{t('app.opening')}</p>
   if (!session) return <Navigate to="/login" replace />
   if (profileError || !profile) {
     return (
       <main className="page">
-        <p className="error-line">{profileError ?? 'Страница игрока не открылась'}</p>
-        <button type="button" onClick={() => void refresh()}>Повторить</button>
+        <p className="error-line">{profileError === 'PROFILE' ? t('errors.PROFILE') : t('app.profileClosed')}</p>
+        <button type="button" onClick={() => void refresh()}>
+          {t('app.retry')}
+        </button>
       </main>
     )
   }

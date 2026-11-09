@@ -1,8 +1,11 @@
 import { useEffect, useState, type FormEvent } from 'react'
+import { useTranslation } from 'react-i18next'
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import { useAuth } from '../auth.tsx'
 import { GAMES } from '../domain.ts'
-import { ApiError, callApi } from '../lib/api.ts'
+import { useFault } from '../i18n/fault.ts'
+import { gameName } from '../i18n/labels.ts'
+import { callApi } from '../lib/api.ts'
 import { supabase } from '../lib/supabase.ts'
 
 type ListChoice = { id: string; title: string }
@@ -17,13 +20,14 @@ type RoomRow = {
 }
 
 export function RoomHomePage() {
+  const { t } = useTranslation()
   const [params] = useSearchParams()
   const multiGames = GAMES.filter((game) => game.modes.includes('multi'))
   const [gameId, setGameId] = useState(params.get('game') || multiGames[0]?.id || '')
   const [lists, setLists] = useState<ListChoice[]>([])
   const [listId, setListId] = useState('')
   const [code, setCode] = useState('')
-  const [error, setError] = useState('')
+  const fault = useFault()
   const [pending, setPending] = useState(false)
   const navigate = useNavigate()
 
@@ -41,12 +45,12 @@ export function RoomHomePage() {
 
   async function createRoom() {
     setPending(true)
-    setError('')
+    fault.clear()
     try {
       const room = await callApi<{ id: string }>({ action: 'room-create', gameId, listId })
       navigate(`/room/${room.id}`)
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Комната не собралась')
+      fault.caught(caught, 'room.createFailed')
     } finally {
       setPending(false)
     }
@@ -55,12 +59,12 @@ export function RoomHomePage() {
   async function join(event: FormEvent) {
     event.preventDefault()
     setPending(true)
-    setError('')
+    fault.clear()
     try {
       const room = await callApi<{ id: string }>({ action: 'room-join', code })
       navigate(`/room/${room.id}`)
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Комната не найдена')
+      fault.caught(caught, 'room.joinFailed')
     } finally {
       setPending(false)
     }
@@ -68,47 +72,48 @@ export function RoomHomePage() {
 
   return (
     <>
-      <p className="eyebrow">Комната</p>
-      <p className="cover-line">Баллы умножаются на место. Последнее место всё равно получает 1.05.</p>
-      <label className="label" htmlFor="game">Игра</label>
+      <p className="eyebrow">{t('room.eyebrow')}</p>
+      <p className="cover-line">{t('room.blurb')}</p>
+      <label className="label" htmlFor="game">{t('room.game')}</label>
       <select id="game" className="plain-input" value={gameId} onChange={(event) => setGameId(event.target.value)}>
         {multiGames.map((game) => (
-          <option key={game.id} value={game.id}>{game.name}</option>
+          <option key={game.id} value={game.id}>{gameName(t, game.id, game.name)}</option>
         ))}
       </select>
-      <label className="label" htmlFor="room-list">Список</label>
+      <label className="label" htmlFor="room-list">{t('room.list')}</label>
       <select id="room-list" className="plain-input" value={listId} onChange={(event) => setListId(event.target.value)}>
         {lists.map((list) => (
           <option key={list.id} value={list.id}>{list.title}</option>
         ))}
       </select>
       <button type="button" disabled={!listId || pending} onClick={() => void createRoom()}>
-        Создать комнату
+        {t('room.create')}
       </button>
       <form className="sheet" onSubmit={(event) => void join(event)}>
-        <label className="label" htmlFor="code">Код комнаты</label>
+        <label className="label" htmlFor="code">{t('room.code')}</label>
         <input id="code" className="ink-input" value={code} maxLength={6} onChange={(event) => setCode(event.target.value.toUpperCase())} />
-        <button type="submit" disabled={pending || code.trim().length < 6}>Войти в комнату</button>
+        <button type="submit" disabled={pending || code.trim().length < 6}>{t('room.join')}</button>
       </form>
-      {error ? <p className="error-line" role="alert">{error}</p> : null}
+      {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
     </>
   )
 }
 
 export function RoomTablePage() {
+  const { t } = useTranslation()
   const { roomId = '' } = useParams()
   const { profile, refresh } = useAuth()
   const navigate = useNavigate()
   const [room, setRoom] = useState<RoomRow | null>(null)
   const [names, setNames] = useState<{ id: string; name: string }[]>([])
   const [listTitle, setListTitle] = useState('')
-  const [error, setError] = useState('')
+  const fault = useFault()
   const [pending, setPending] = useState(false)
 
   async function load() {
     const { data, error: roomError } = await supabase.from('rooms').select('id, code, host_id, list_id, game_id, status, session_id').eq('id', roomId).maybeSingle()
     if (roomError || !data) {
-      setError('Комната не найдена')
+      fault.local('room.notFound')
       return
     }
     const next = data as RoomRow
@@ -135,7 +140,7 @@ export function RoomTablePage() {
   async function start() {
     if (!room) return
     setPending(true)
-    setError('')
+    fault.clear()
     try {
       const result = await callApi<{ sessionId: string }>({
         action: 'session-start',
@@ -147,7 +152,7 @@ export function RoomTablePage() {
       await refresh()
       navigate(`/session/${result.sessionId}`)
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Упражнение не началось')
+      fault.caught(caught, 'room.startFailed')
     } finally {
       setPending(false)
     }
@@ -158,38 +163,38 @@ export function RoomTablePage() {
       await callApi({ action: 'room-leave', roomId })
       navigate('/room')
     } catch (caught) {
-      setError(caught instanceof ApiError ? caught.message : 'Не удалось выйти')
+      fault.caught(caught, 'room.leaveFailed')
     }
   }
 
-  if (!room) return <p className="meta">{error || 'Открываю комнату…'}</p>
+  if (!room) return <p className="meta">{fault.text || t('room.opening')}</p>
   const game = GAMES.find((item) => item.id === room.game_id)
   const host = profile?.id === room.host_id
 
   return (
     <>
-      <p className="eyebrow">{game?.name ?? 'Комната'}</p>
+      <p className="eyebrow">{game ? gameName(t, game.id, game.name) : t('room.fallback')}</p>
       <p className="code-hero">{room.code}</p>
-      <p className="meta">{listTitle ? `Список «${listTitle}». ` : ''}Код можно продиктовать.</p>
+      <p className="meta">{listTitle ? `${t('room.listNamed', { title: listTitle })} ` : ''}{t('room.codeHint')}</p>
       <ul className="contents">
         {names.map((player) => (
           <li key={player.id}>
             <span>{player.name}</span>
-            <span className="meta">{player.id === room.host_id ? 'хозяин' : 'в комнате'}</span>
+            <span className="meta">{player.id === room.host_id ? t('room.host') : t('room.member')}</span>
           </li>
         ))}
       </ul>
-      {error ? <p className="error-line" role="alert">{error}</p> : null}
+      {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
       <div className="row">
         {host ? (
           <button type="button" disabled={names.length < 2 || pending} onClick={() => void start()}>
-            Начать для всех
+            {t('room.startAll')}
           </button>
         ) : (
-          <p className="meta">Ждём, пока хозяин начнёт.</p>
+          <p className="meta">{t('room.waitingHost')}</p>
         )}
-        <button type="button" className="quiet" onClick={() => void leave()}>Выйти</button>
-        <Link className="quiet" to="/room">Другая комната</Link>
+        <button type="button" className="quiet" onClick={() => void leave()}>{t('room.leave')}</button>
+        <Link className="quiet" to="/room">{t('room.another')}</Link>
       </div>
     </>
   )
