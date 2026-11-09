@@ -202,14 +202,16 @@
     "next": "Seuraava",
     "skip": "En tiedä",
     "giveUp": "Luovuta",
-    "match": "Yhdistä sana ja käännös"
+    "match": "Yhdistä sana ja käännös",
+    "invaders": "Napauta putoavaa sanaa ja tykkiä, jossa on sen käännös. Kumpi tahansa ensin. Väärä pari vain välähtää. Tykeille ehtinyt sana on menetetty."
   },
   "games": {
     "flashcards": "Kortit",
     "sprint": "Sprintti",
     "dictation": "Sanelu",
     "pairs": "Parit",
-    "blitz": "Salama"
+    "blitz": "Salama",
+    "invaders": "Hyökkäys"
   },
   "skins": {
     "inkwell": "Mustepullo",

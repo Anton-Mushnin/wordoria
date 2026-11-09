@@ -6,4 +6,5 @@ export const GAMES: GameDefinition[] = [
   { id: 'dictation', name: 'Диктант', costIv: 12, modes: ['solo'] },
   { id: 'pairs', name: 'Пары', costIv: 10, modes: ['solo', 'multi'] },
   { id: 'blitz', name: 'Блиц', costIv: 20, modes: ['solo', 'multi'] },
+  { id: 'invaders', name: 'Налёт', costIv: 15, modes: ['solo', 'multi'] },
 ]

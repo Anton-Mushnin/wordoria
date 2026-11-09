@@ -6,6 +6,7 @@ const games = {
   dictation: 'games.dictation',
   pairs: 'games.pairs',
   blitz: 'games.blitz',
+  invaders: 'games.invaders',
 } as const
 
 const skins = {

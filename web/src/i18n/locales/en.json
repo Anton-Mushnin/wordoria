@@ -206,14 +206,16 @@
     "next": "Next",
     "skip": "I don't know",
     "giveUp": "Give up",
-    "match": "Match the word and the translation"
+    "match": "Match the word and the translation",
+    "invaders": "Tap a falling word and the gun with its translation. Either one first. A wrong pair only flashes. A word that reaches the guns is lost."
   },
   "games": {
     "flashcards": "Cards",
     "sprint": "Sprint",
     "dictation": "Dictation",
     "pairs": "Pairs",
-    "blitz": "Blitz"
+    "blitz": "Blitz",
+    "invaders": "Raid"
   },
   "skins": {
     "inkwell": "Inkwell",
