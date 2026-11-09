@@ -191,6 +191,54 @@ textarea { min-height: 9rem; resize: vertical; }
 
 .switcher { margin-top: 1rem; }
 
+.name-slip {
+  margin: auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  overflow: visible;
+}
+
+.name-slip::backdrop {
+  background: color-mix(in srgb, var(--ink) 34%, transparent);
+}
+
+.name-card {
+  width: min(26rem, calc(100vw - 2.4rem));
+  margin: 0;
+  padding: 1.5rem 1.3rem 1.3rem 3.2rem;
+  background:
+    linear-gradient(90deg, transparent 2.2rem, var(--margin) 2.2rem, var(--margin) 2.35rem, transparent 2.35rem),
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    var(--paper);
+  background-size: auto, 28px 28px, 28px 28px, auto;
+  box-shadow: 7px 7px 0 var(--ink);
+  transform: rotate(-1.4deg);
+}
+
+.name-card .ink-input {
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 0.3rem;
+}
+
+.name-card h2 {
+  margin: 0.15rem 0 1rem;
+  font-family: var(--pen);
+  font-weight: 700;
+  font-size: clamp(2.6rem, 9vw, 3.8rem);
+  line-height: 0.9;
+}
+
+.name-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.8rem 1.2rem;
+  align-items: center;
+  margin-top: 1.1rem;
+}
+
 .error-line {
   color: var(--mark);
   font-family: var(--pen);
@@ -275,6 +323,7 @@ textarea { min-height: 9rem; resize: vertical; }
 @media (prefers-reduced-motion: reduce) {
   .pen-line path,
   .stamp { transition: none; animation: none; }
+  .name-card { transform: none; }
 }
 
 @media (max-width: 800px) {
