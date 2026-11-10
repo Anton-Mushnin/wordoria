@@ -80,10 +80,20 @@
   margin: 0;
   padding: 10px 8px 8px;
   border: 0;
+  border-radius: 0;
   background: transparent;
   color: var(--phosphor);
   font: inherit;
   cursor: pointer;
+  box-shadow: none;
+}
+
+.invaders button.invaders-ship:hover,
+.invaders button.invaders-ship:active,
+.invaders button.invaders-ship:disabled {
+  transform: translate(-50%, -100%);
+  background: transparent;
+  box-shadow: none;
 }
 
 .invaders-body {
@@ -243,6 +253,7 @@
   margin: 0;
   padding: 0.15rem 0.3rem 0.4rem;
   border: 2px solid var(--amber);
+  border-radius: 0;
   background: var(--turret);
   color: var(--amber);
   font: inherit;
@@ -251,6 +262,13 @@
   text-align: center;
   overflow-wrap: anywhere;
   cursor: pointer;
+  box-shadow: none;
+}
+
+.invaders button.invaders-gun:hover,
+.invaders button.invaders-gun:active {
+  transform: none;
+  box-shadow: none;
 }
 
 .invaders-barrel {

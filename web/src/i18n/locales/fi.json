@@ -203,7 +203,26 @@
     "skip": "En tiedä",
     "giveUp": "Luovuta",
     "match": "Yhdistä sana ja käännös",
-    "invaders": "Napauta putoavaa sanaa ja tykkiä, jossa on sen käännös. Kumpi tahansa ensin. Väärä pari vain välähtää. Tykeille ehtinyt sana on menetetty."
+    "invaders": "Napauta putoavaa sanaa ja tykkiä, jossa on sen käännös. Kumpi tahansa ensin. Väärä pari vain välähtää. Tykeille ehtinyt sana on menetetty.",
+    "labyrinth": "Vedä sanasta polku avoimia ruutuja pitkin sen käännökseen. Oikea polku jää. Väärä uloskäynti peruuntuu, ja sana on virhe."
+  },
+  "teacher": {
+    "purse": "Kassa {{purse}}",
+    "levelLine": "Taso {{level}}",
+    "row": "enintään {{words}} sanaa · panos {{stake}} · osuma +{{hit}} · huti −{{miss}}",
+    "rowExact_one": "{{words}} sana · panos {{stake}} · osuma +{{hit}} · huti −{{miss}}",
+    "rowExact_few": "{{words}} sanaa · panos {{stake}} · osuma +{{hit}} · huti −{{miss}}",
+    "rowExact_many": "{{words}} sanaa · panos {{stake}} · osuma +{{hit}} · huti −{{miss}}",
+    "rowExact_other": "{{words}} sanaa · panos {{stake}} · osuma +{{hit}} · huti −{{miss}}",
+    "newSitting": "Uusi peli",
+    "hint": "Valitse sana ja sitten käännös. Nuolet liikuttavat, Enter valitsee.",
+    "bankrupt": "Vararikko",
+    "bankruptLine": "Kassa jäi {{purse}}. Peli alkaa taas nollasta.",
+    "clear": "Taso läpi",
+    "clearLine": "Kassassa on {{purse}}.",
+    "handIn": "Palauta",
+    "backToLevels": "Takaisin tasoille",
+    "bustStamp": "Vararikko"
   },
   "games": {
     "flashcards": "Kortit",
@@ -211,7 +230,9 @@
     "dictation": "Sanelu",
     "pairs": "Parit",
     "blitz": "Salama",
-    "invaders": "Hyökkäys"
+    "invaders": "Hyökkäys",
+    "labyrinth": "Labyrintti",
+    "teacher": "Word Teacher"
   },
   "skins": {
     "inkwell": "Mustepullo",

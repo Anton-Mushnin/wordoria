@@ -12,7 +12,7 @@ import {
   wordScore,
 } from '../../../src/scoring.ts'
 import type { Answer } from '../../../src/types.ts'
-import { pickHardestWords } from '../../../src/words.ts'
+import { pickHardestWords, teacherDeal, teacherLevel } from '../../../src/words.ts'
 
 class ApiError extends Error {
   constructor(
@@ -142,7 +142,8 @@ async function sessionStart(tx: Tx, userId: string, body: Record<string, unknown
   const listId = uuid(body.listId)
   const game = requireGame(str(body.gameId), mode)
   if (mode === 'solo') {
-    const { words } = await loadList(tx, listId, userId)
+    const loaded = await loadList(tx, listId, userId)
+    const words = game.id === 'teacher' ? dealTeacher(loaded.words, body.level) : loaded.words
     return openSession(tx, {
       mode,
       gameId: game.id,
@@ -675,6 +676,14 @@ async function requireProfile(tx: Tx, userId: string) {
   const [profile] = await tx<Row[]>`select id from profiles where id = ${userId}`
   if (!profile) throw new ApiError('PLAYER_NOT_FOUND', 'Игрок не найден', 401)
   return profile
+}
+
+function dealTeacher(words: WordRow[], level: unknown): WordRow[] {
+  const parsed = typeof level === 'number' ? level : Number(level)
+  if (!teacherLevel(parsed)) throw new ApiError('MODE_UNSUPPORTED', 'Нужен уровень от 1 до 6')
+  const dealt = teacherDeal(words, parsed)
+  if (dealt.length === 0) throw new ApiError('EMPTY_LIST', 'В списке нет слов')
+  return dealt
 }
 
 function requireGame(gameId: string, mode: 'solo' | 'multi') {

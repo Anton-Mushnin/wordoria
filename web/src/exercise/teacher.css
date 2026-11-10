@@ -1,0 +1,154 @@
+.crt {
+  --amber: #ffb000;
+  --amber-dim: #9a6a12;
+  --crt-bg: #100c08;
+  --alert: #ff3b1f;
+  position: relative;
+  margin-top: 1rem;
+  padding: 0.9rem 1rem 1.1rem;
+  background: var(--crt-bg);
+  color: var(--amber);
+  font-family: 'VT323', ui-monospace, monospace;
+  font-size: 1.55rem;
+  line-height: 1.15;
+  letter-spacing: 0.03em;
+  border: 2px solid var(--amber);
+}
+
+.crt button {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.05rem 0.4rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  letter-spacing: inherit;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: none;
+}
+
+.crt button:hover,
+.crt button:active {
+  transform: none;
+  box-shadow: none;
+}
+
+.crt button:disabled {
+  cursor: default;
+}
+
+.crt button:hover:not(:disabled, .picked, .bad) {
+  background: color-mix(in srgb, var(--amber) 16%, transparent);
+}
+
+.crt :focus-visible {
+  outline: 1px solid var(--amber);
+  outline-offset: 2px;
+}
+
+.crt-status {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 1rem;
+  margin-bottom: 0.7rem;
+  padding-bottom: 0.3rem;
+  border-bottom: 1px solid var(--amber-dim);
+}
+
+.crt-title {
+  margin: 0;
+  color: var(--amber-dim);
+}
+
+.crt-purse {
+  margin: 0;
+  font-size: 2rem;
+  line-height: 0.9;
+}
+
+.crt-purse.negative {
+  color: var(--alert);
+}
+
+.crt-hint,
+.crt-end p {
+  margin: 0.35rem 0 0;
+  color: var(--amber-dim);
+}
+
+.crt-cols {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1.2rem;
+}
+
+.crt-head {
+  margin: 0 0 0.25rem;
+  padding-inline: 0.4rem;
+  color: var(--amber-dim);
+}
+
+.crt button.cursor {
+  box-shadow: inset 3px 0 0 var(--amber);
+}
+
+.crt button.picked {
+  background: var(--amber);
+  color: var(--crt-bg);
+}
+
+.crt button.bad {
+  background: var(--alert);
+  color: var(--crt-bg);
+}
+
+.crt-end {
+  min-height: 8rem;
+}
+
+.crt-bust,
+.crt-clear {
+  margin: 0.6rem 0 0;
+  font-size: 4rem;
+  line-height: 0.85;
+  letter-spacing: 0.06em;
+}
+
+.crt-bust {
+  color: var(--alert);
+}
+
+.crt button.dos-go,
+.crt button.dos-quiet {
+  display: inline-block;
+  width: auto;
+  margin-top: 1rem;
+  padding: 0.1rem 0.7rem;
+  border: 1px solid currentColor;
+}
+
+.crt button.dos-quiet {
+  margin-left: 0.6rem;
+  color: var(--amber-dim);
+  border-color: var(--amber-dim);
+}
+
+@media (max-width: 640px) {
+  .crt {
+    font-size: 1.35rem;
+  }
+
+  .crt-cols {
+    grid-template-columns: 1fr;
+  }
+
+  .crt-bust,
+  .crt-clear {
+    font-size: 2.8rem;
+  }
+}

@@ -4,8 +4,8 @@ import type { TypedAnswer, WordCard } from './exercises.tsx'
 import './invaders.css'
 
 const WAVE = 6
-const FIRST_FALL_MS = 16_000
-const MIN_FALL_MS = 8_000
+const FIRST_FALL_MS = 24_000
+const MIN_FALL_MS = 12_000
 const SHOT_MS = 520
 const BURST_MS = 460
 const TOP = 0.18

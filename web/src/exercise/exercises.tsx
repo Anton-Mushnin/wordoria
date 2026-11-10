@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { PenLine } from '../components/Marks.tsx'
 import { InvadersExercise } from './invaders.tsx'
+import { TeacherExercise } from './teacher.tsx'
+import { LabyrinthExercise } from './labyrinth.tsx'
 
 export type WordCard = { id: string; term: string; translation: string }
 export type TypedAnswer = { wordId: string; typed: string; timeMs: number }
@@ -293,6 +295,10 @@ export function GameExercise({
 }) {
   if (gameId === 'pairs') return <PairsExercise words={words} onSubmit={onSubmit} submitting={submitting} />
   if (gameId === 'invaders') return <InvadersExercise words={words} onSubmit={onSubmit} submitting={submitting} />
+  if (gameId === 'teacher') {
+    return <TeacherExercise sessionId={sessionId} words={words} onSubmit={onSubmit} submitting={submitting} />
+  }
+  if (gameId === 'labyrinth') return <LabyrinthExercise words={words} onSubmit={onSubmit} submitting={submitting} />
   return (
     <LineExercise
       sessionId={sessionId}

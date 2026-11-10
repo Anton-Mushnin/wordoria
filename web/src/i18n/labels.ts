@@ -7,6 +7,8 @@ const games = {
   pairs: 'games.pairs',
   blitz: 'games.blitz',
   invaders: 'games.invaders',
+  labyrinth: 'games.labyrinth',
+  teacher: 'games.teacher',
 } as const
 
 const skins = {

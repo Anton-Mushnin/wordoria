@@ -5,10 +5,13 @@ import { useAuth } from '../auth.tsx'
 import { GAMES } from '../domain.ts'
 import { useFault } from '../i18n/fault.ts'
 import { gameName } from '../i18n/labels.ts'
+import { TeacherDesk } from '../exercise/teacher.tsx'
+import { rememberLevel } from '../exercise/teacherPurse.ts'
 import { callApi } from '../lib/api.ts'
 import { supabase } from '../lib/supabase.ts'
 
 type ListChoice = { id: string; title: string }
+type ListedWord = { term: string }
 
 export function PlaySetupPage() {
   const { t } = useTranslation()
@@ -19,6 +22,7 @@ export function PlaySetupPage() {
   const [lists, setLists] = useState<ListChoice[]>([])
   const [listsReady, setListsReady] = useState(false)
   const [listId, setListId] = useState('')
+  const [listed, setListed] = useState<ListedWord[]>([])
   const fault = useFault()
   const [pending, setPending] = useState(false)
 
@@ -35,6 +39,29 @@ export function PlaySetupPage() {
       })
   }, [])
 
+  useEffect(() => {
+    if (game?.id !== 'teacher' || !listId) return
+    let cancel = false
+    setListed([])
+    void supabase
+      .from('list_words')
+      .select('words(term)')
+      .eq('list_id', listId)
+      .then(({ data }) => {
+        if (cancel) return
+        const next: ListedWord[] = []
+        for (const row of data ?? []) {
+          const word = row.words as { term?: string } | { term?: string }[] | null
+          const term = Array.isArray(word) ? word[0]?.term : word?.term
+          if (term) next.push({ term })
+        }
+        setListed(next)
+      })
+    return () => {
+      cancel = true
+    }
+  }, [game?.id, listId])
+
   if (!game) {
     return (
       <>
@@ -46,11 +73,18 @@ export function PlaySetupPage() {
 
   const free = (profile?.iv ?? 0) < game.costIv
 
-  async function start() {
+  async function start(level?: number) {
     fault.clear()
     setPending(true)
     try {
-      const result = await callApi<{ sessionId: string }>({ action: 'session-start', mode: 'solo', gameId: game!.id, listId })
+      const result = await callApi<{ sessionId: string }>({
+        action: 'session-start',
+        mode: 'solo',
+        gameId: game!.id,
+        listId,
+        level,
+      })
+      if (level) rememberLevel(result.sessionId, level)
       await refresh()
       navigate(`/session/${result.sessionId}`)
     } catch (caught) {
@@ -72,12 +106,16 @@ export function PlaySetupPage() {
       </select>
       {listsReady && lists.length === 0 ? <p className="meta">{t('play.needList')}</p> : null}
       {fault.text ? <p className="error-line" role="alert">{fault.text}</p> : null}
-      <div className="row">
-        <button type="button" disabled={!listId || pending} onClick={() => void start()}>
-          {t('play.start')}
-        </button>
-        {game.modes.includes('multi') ? <Link className="button" to={`/room?game=${game.id}`}>{t('play.gather')}</Link> : null}
-      </div>
+      {game.id === 'teacher' ? (
+        <TeacherDesk words={listed} pending={!listId || pending} onStart={(level) => void start(level)} />
+      ) : (
+        <div className="row">
+          <button type="button" disabled={!listId || pending} onClick={() => void start()}>
+            {t('play.start')}
+          </button>
+          {game.modes.includes('multi') ? <Link className="button" to={`/room?game=${game.id}`}>{t('play.gather')}</Link> : null}
+        </div>
+      )}
     </>
   )
 }

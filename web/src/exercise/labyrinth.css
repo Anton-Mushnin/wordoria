@@ -1,0 +1,198 @@
+.labyrinth {
+  --paper: #e7eef6;
+  --ink: #173e66;
+  --pencil: #5c7288;
+  --mark: #c4182b;
+  --good: #1c7c4e;
+  --pen: "Caveat", cursive;
+  margin-top: 1.6rem;
+  user-select: none;
+  color: var(--ink);
+  font-family: "Sora", sans-serif;
+}
+
+.labyrinth-hint {
+  margin: 0 0 0.85rem;
+  color: var(--pencil);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.labyrinth-board {
+  display: grid;
+  grid-template-columns: minmax(9.5rem, 1fr) minmax(10rem, 1.15fr) minmax(9.5rem, 1fr);
+  grid-template-rows: var(--tracks);
+  column-gap: 0;
+  width: 100%;
+  background: var(--paper);
+}
+
+.labyrinth-board.is-miss {
+  animation: labyrinth-snap 0.28s ease;
+}
+
+.labyrinth-maze {
+  grid-column: 2;
+  grid-row: 1 / -1;
+  position: relative;
+  min-width: 0;
+  touch-action: none;
+}
+
+.labyrinth-ink {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.labyrinth-mass {
+  fill: var(--ink);
+}
+
+.labyrinth-wall {
+  fill: none;
+  stroke: var(--ink);
+  stroke-width: 1.6px;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.labyrinth-ink polyline {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  vector-effect: non-scaling-stroke;
+}
+
+.labyrinth-kept .nib {
+  stroke: var(--good);
+  stroke-width: 8px;
+  opacity: 0.22;
+}
+
+.labyrinth-kept .core {
+  stroke: var(--good);
+  stroke-width: 2.4px;
+}
+
+.labyrinth-live .nib {
+  stroke: var(--mark);
+  stroke-width: 8px;
+  opacity: 0.28;
+}
+
+.labyrinth-live .core {
+  stroke: var(--mark);
+  stroke-width: 2.4px;
+}
+
+.labyrinth-dot {
+  position: absolute;
+  z-index: 2;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin: -0.25rem 0 0 -0.25rem;
+  border-radius: 50%;
+  background: var(--mark);
+  pointer-events: none;
+}
+
+.labyrinth-word {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-self: stretch;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0.15rem 0.65rem;
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  background: transparent;
+  color: var(--ink);
+  font-family: var(--pen);
+  font-size: 1.4rem;
+  line-height: 1.15;
+  white-space: normal;
+  touch-action: none;
+}
+
+button.labyrinth-word {
+  justify-content: flex-end;
+  border-right: 0;
+  box-shadow: inset -3px 0 0 var(--mark);
+  text-align: right;
+  cursor: pointer;
+}
+
+button.labyrinth-word {
+  font-weight: inherit;
+}
+
+button.labyrinth-word:hover,
+button.labyrinth-word:active {
+  transform: none;
+}
+
+button.labyrinth-word:disabled {
+  opacity: 1;
+  cursor: default;
+}
+
+p.labyrinth-word {
+  border-left: 0;
+  text-align: left;
+}
+
+.labyrinth-word span {
+  display: block;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.labyrinth-word.is-active {
+  background: var(--ink);
+  color: var(--paper);
+  box-shadow: none;
+}
+
+.labyrinth-word.is-solved {
+  color: var(--good);
+  border-color: var(--good);
+}
+
+button.labyrinth-word.is-solved {
+  box-shadow: inset -3px 0 0 var(--good);
+}
+
+p.labyrinth-word.is-solved {
+  box-shadow: inset 3px 0 0 var(--good);
+}
+
+.labyrinth-word.is-bad {
+  color: var(--mark);
+  border-color: var(--mark);
+}
+
+button.labyrinth-word.is-bad {
+  box-shadow: inset -3px 0 0 var(--mark);
+}
+
+p.labyrinth-word.is-bad {
+  box-shadow: inset 3px 0 0 var(--mark);
+}
+
+@keyframes labyrinth-snap {
+  20% { transform: translateX(-4px); }
+  50% { transform: translateX(4px); }
+  80% { transform: translateX(-2px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .labyrinth-board.is-miss { animation: none; }
+}

@@ -29,6 +29,6 @@ export type {
   WordListView,
   WordStat,
 } from './types.ts'
-export { pickHardestWords } from './words.ts'
+export { pickHardestWords, teacherDeal, teacherLevel, teacherStake, TEACHER_LEVELS } from './words.ts'
 export { Wordoria } from './wordoria.ts'
 export type { WordoriaOptions } from './wordoria.ts'

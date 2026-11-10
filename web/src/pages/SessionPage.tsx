@@ -5,6 +5,7 @@ import { useAuth } from '../auth.tsx'
 import { Stamp } from '../components/Marks.tsx'
 import { GAMES } from '../domain.ts'
 import { GameExercise, type TypedAnswer, type WordCard } from '../exercise/exercises.tsx'
+import { bustKey } from '../exercise/teacherPurse.ts'
 import { useFault } from '../i18n/fault.ts'
 import { placeContext } from '../i18n/index.ts'
 import { gameName } from '../i18n/labels.ts'
@@ -121,6 +122,7 @@ export function SessionPage() {
 
   const game = GAMES.find((item) => item.id === gameId)
   const place = me?.place ?? 0
+  const bust = gameId === 'teacher' && sessionStorage.getItem(bustKey(sessionId)) === '1'
   if (phase === 'loading') return <p className="meta">{t('session.opening')}</p>
   if (phase === 'missing') return <p className="error-line">{t('session.missing')}</p>
 
@@ -140,10 +142,12 @@ export function SessionPage() {
       ) : null}
       {phase === 'result' && me ? (
         <>
-          <Stamp tone={(me.errors ?? 0) === 0 ? 'ok' : 'bad'}>
-            {board.length > 1
-              ? t('session.place', { count: place, context: placeContext(place, i18n.language) })
-              : t('session.done')}
+          <Stamp tone={bust || (me.errors ?? 0) > 0 ? 'bad' : 'ok'}>
+            {bust
+              ? t('teacher.bustStamp')
+              : board.length > 1
+                ? t('session.place', { count: place, context: placeContext(place, i18n.language) })
+                : t('session.done')}
           </Stamp>
           <p className="word-hero">{me.points ?? 0}</p>
           <p>
@@ -171,7 +175,9 @@ export function SessionPage() {
               )
             })}
           </ul>
-          <Link className="button" to="/">{t('play.back')}</Link>
+          <Link className="button" to={gameId === 'teacher' ? '/play/teacher' : '/'}>
+            {gameId === 'teacher' ? t('teacher.backToLevels') : t('play.back')}
+          </Link>
         </>
       ) : null}
     </>

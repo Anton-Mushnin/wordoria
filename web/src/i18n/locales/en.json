@@ -207,7 +207,26 @@
     "skip": "I don't know",
     "giveUp": "Give up",
     "match": "Match the word and the translation",
-    "invaders": "Tap a falling word and the gun with its translation. Either one first. A wrong pair only flashes. A word that reaches the guns is lost."
+    "invaders": "Tap a falling word and the gun with its translation. Either one first. A wrong pair only flashes. A word that reaches the guns is lost.",
+    "labyrinth": "Drag from a word through the open cells to its translation. A right path stays. A wrong exit snaps back, and that word is a miss."
+  },
+  "teacher": {
+    "purse": "Purse {{purse}}",
+    "levelLine": "Level {{level}}",
+    "row": "up to {{words}} words · stake {{stake}} · hit +{{hit}} · miss −{{miss}}",
+    "rowExact_one": "{{words}} word · stake {{stake}} · hit +{{hit}} · miss −{{miss}}",
+    "rowExact_few": "{{words}} words · stake {{stake}} · hit +{{hit}} · miss −{{miss}}",
+    "rowExact_many": "{{words}} words · stake {{stake}} · hit +{{hit}} · miss −{{miss}}",
+    "rowExact_other": "{{words}} words · stake {{stake}} · hit +{{hit}} · miss −{{miss}}",
+    "newSitting": "New sitting",
+    "hint": "Pick a word, then its translation. Arrows move. Enter picks.",
+    "bankrupt": "Bankrupt",
+    "bankruptLine": "Closed at {{purse}}. The sitting starts again at 0.",
+    "clear": "Level clear",
+    "clearLine": "The purse is {{purse}}.",
+    "handIn": "Hand in",
+    "backToLevels": "Back to the levels",
+    "bustStamp": "Bankrupt"
   },
   "games": {
     "flashcards": "Cards",
@@ -215,7 +234,9 @@
     "dictation": "Dictation",
     "pairs": "Pairs",
     "blitz": "Blitz",
-    "invaders": "Raid"
+    "invaders": "Raid",
+    "labyrinth": "Labyrinth",
+    "teacher": "Word Teacher"
   },
   "skins": {
     "inkwell": "Inkwell",
