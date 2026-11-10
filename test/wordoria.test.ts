@@ -195,7 +195,7 @@ test('лутбокс открывается только внутри лимит
   const fund = app.uploadList(player.id, 'фонд', drafts(10, 'fund'))
   playPerfect(app, player.id, fund.id)
   const list = app.uploadList(player.id, 'сложное', drafts(5, 'hard'))
-  play(app, player.id, list.id, (wordId, index) => ({ wordId, correct: index !== 0, timeMs: target }))
+  const missed = play(app, player.id, list.id, (wordId, index) => ({ wordId, correct: index !== 0, timeMs: target }))
   play(app, player.id, list.id, (wordId, index) => ({ wordId, correct: index !== 0, timeMs: target }))
   const funded = app.getPlayer(player.id)
   assert.ok(funded.iv >= ECONOMY.lootboxPriceIv)
@@ -203,7 +203,7 @@ test('лутбокс открывается только внутри лимит
   const box = app.buyLootbox(player.id)
   assert.equal(app.getPlayer(player.id).iv, funded.iv - ECONOMY.lootboxPriceIv)
   const challenge = app.startLootboxChallenge(player.id, box.id)
-  assert.equal(challenge.input.words[0]?.id, list.words[0]?.id)
+  assert.equal(challenge.input.words[0]?.id, missed.started.input.words[0]?.id)
   assert.equal(challenge.limits.maxErrors, 1)
 
   const failed = app.finishLootboxChallenge(
@@ -273,11 +273,25 @@ test('награды лутбокса: скин, опыт, подписка се
   assert.equal(codeOf(() => gift.app.giftSubscription(friend.id, friend.id, 'x')), 'SELF_GIFT')
 })
 
+test('каждая игра получает свою колоду', () => {
+  const app = new Wordoria({ rng: () => 0 })
+  const player = app.register('Аня')
+  const list = app.uploadList(player.id, 'длинный', drafts(30, 'long'))
+  assert.equal(app.startSolo(player.id, list.id, 'flashcards').input.words.length, 10)
+  assert.equal(app.startSolo(player.id, list.id, 'invaders').input.words.length, 12)
+  assert.equal(app.startSolo(player.id, list.id, 'labyrinth').input.words.length, 5)
+})
+
 test('повтор уже собранного скина превращается в деньги', () => {
   const app = new Wordoria({ rng: () => 0 })
   const player = app.register('Аня')
   const list = app.uploadList(player.id, 'скины', drafts(30, 'skin'))
-  playPerfect(app, player.id, list.id)
+  let plays = 0
+  while (app.getPlayer(player.id).iv < ECONOMY.lootboxPriceIv * 6) {
+    playPerfect(app, player.id, list.id)
+    plays += 1
+    assert.ok(plays < 12)
+  }
   let lastMoney = 0
   for (let index = 0; index < 6; index += 1) {
     const box = app.buyLootbox(player.id)

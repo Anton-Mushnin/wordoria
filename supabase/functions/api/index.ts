@@ -12,7 +12,7 @@ import {
   wordScore,
 } from '../../../src/scoring.ts'
 import type { Answer } from '../../../src/types.ts'
-import { pickHardestWords, teacherDeal, teacherLevel } from '../../../src/words.ts'
+import { pickHardestWords, pickSessionWords, teacherDeal, teacherLevel } from '../../../src/words.ts'
 
 class ApiError extends Error {
   constructor(
@@ -143,7 +143,6 @@ async function sessionStart(tx: Tx, userId: string, body: Record<string, unknown
   const game = requireGame(str(body.gameId), mode)
   if (mode === 'solo') {
     const loaded = await loadList(tx, listId, userId)
-    const words = game.id === 'teacher' ? dealTeacher(loaded.words, body.level) : loaded.words
     return openSession(tx, {
       mode,
       gameId: game.id,
@@ -151,7 +150,7 @@ async function sessionStart(tx: Tx, userId: string, body: Record<string, unknown
       listId,
       hostId: userId,
       playerIds: [userId],
-      words,
+      words: await dealForGame(tx, userId, game, loaded.words, body.level),
     })
   }
   const roomId = uuid(body.roomId)
@@ -166,7 +165,7 @@ async function sessionStart(tx: Tx, userId: string, body: Record<string, unknown
     select player_id from room_players where room_id = ${roomId} order by joined_at
   `
   if (members.length < 2) throw new ApiError('NEED_OPPONENTS', 'Нужны минимум два игрока')
-  const { words } = await loadList(tx, listId, userId)
+  const loaded = await loadList(tx, listId, userId)
   const opened = await openSession(tx, {
     mode,
     gameId: game.id,
@@ -174,7 +173,7 @@ async function sessionStart(tx: Tx, userId: string, body: Record<string, unknown
     listId,
     hostId: userId,
     playerIds: members.map((member) => member.player_id),
-    words,
+    words: await dealForGame(tx, userId, game, loaded.words, body.level),
   })
   await tx`
     update rooms set status = 'playing', session_id = ${opened.sessionId}
@@ -676,6 +675,12 @@ async function requireProfile(tx: Tx, userId: string) {
   const [profile] = await tx<Row[]>`select id from profiles where id = ${userId}`
   if (!profile) throw new ApiError('PLAYER_NOT_FOUND', 'Игрок не найден', 401)
   return profile
+}
+
+async function dealForGame(tx: Tx, hostId: string, game: { id: string; words: number }, words: WordRow[], level: unknown) {
+  if (game.id === 'teacher') return dealTeacher(words, level)
+  const snap = await snapshot(tx, hostId, words.map((word) => word.id))
+  return pickSessionWords(words, new Map(Object.entries(snap)), game.words)
 }
 
 function dealTeacher(words: WordRow[], level: unknown): WordRow[] {

@@ -27,6 +27,7 @@ export type GameDefinition = {
   name: string
   costIv: number
   modes: GameMode[]
+  words: number
 }
 
 export type GameInput = {

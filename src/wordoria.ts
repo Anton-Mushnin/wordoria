@@ -25,7 +25,7 @@ import type {
   WordListView,
   WordStat,
 } from './types.ts'
-import { pickHardestWords } from './words.ts'
+import { pickHardestWords, pickSessionWords } from './words.ts'
 
 type PlayerRecord = {
   id: string
@@ -150,13 +150,14 @@ export class Wordoria {
     const list = this.requireList(listId, playerId)
     const sessionId = crypto.randomUUID()
     const chargedIv = this.charge(player, game.costIv, sessionId)
-    const statsSnapshot = this.snapshot(playerId, list.wordIds)
+    const wordIds = this.dealWords(playerId, list.wordIds, game)
+    const statsSnapshot = this.snapshot(playerId, wordIds)
     this.sessions.set(sessionId, {
       id: sessionId,
       mode: 'solo',
       gameId,
       listId,
-      wordIds: [...list.wordIds],
+      wordIds,
       players: [{ playerId, chargedIv, statsSnapshot }],
       status: 'active',
     })
@@ -165,7 +166,7 @@ export class Wordoria {
       gameId,
       chargedIv,
       free: chargedIv === 0,
-      input: this.buildInput(list.wordIds, statsSnapshot),
+      input: this.buildInput(wordIds, statsSnapshot),
     }
   }
 
@@ -189,21 +190,22 @@ export class Wordoria {
     const list = this.requireList(listId, hostId)
     const players = playerIds.map((id) => this.requirePlayer(id))
     const sessionId = crypto.randomUUID()
+    const wordIds = this.dealWords(hostId, list.wordIds, game)
     const slots = players.map((player) => ({
       playerId: player.id,
       chargedIv: this.charge(player, game.costIv, sessionId),
-      statsSnapshot: this.snapshot(player.id, list.wordIds),
+      statsSnapshot: this.snapshot(player.id, wordIds),
     }))
     this.sessions.set(sessionId, {
       id: sessionId,
       mode: 'multi',
       gameId,
       listId,
-      wordIds: [...list.wordIds],
+      wordIds,
       players: slots,
       status: 'active',
     })
-    const words = this.buildInput(list.wordIds, slots[0]!.statsSnapshot).words
+    const words = this.buildInput(wordIds, slots[0]!.statsSnapshot).words
     return {
       sessionId,
       gameId,
@@ -212,7 +214,7 @@ export class Wordoria {
         playerId: slot.playerId,
         chargedIv: slot.chargedIv,
         free: slot.chargedIv === 0,
-        stats: this.buildInput(list.wordIds, slot.statsSnapshot).stats,
+        stats: this.buildInput(wordIds, slot.statsSnapshot).stats,
       })),
     }
   }
@@ -506,6 +508,13 @@ export class Wordoria {
       ownerId: list.ownerId,
       words: list.wordIds.map((id) => this.requireWord(id)),
     }
+  }
+
+  private dealWords(playerId: string, wordIds: string[], game: GameDefinition): string[] {
+    if (game.id === 'teacher') return [...wordIds]
+    const words = wordIds.map((id) => this.requireWord(id))
+    const stats = new Map(words.map((word) => [word.id, this.getStat(playerId, word.id)]))
+    return pickSessionWords(words, stats, game.words, this.rng).map((word) => word.id)
   }
 
   private buildInput(wordIds: string[], snapshot: Record<string, WordStat>): GameInput {

@@ -47,6 +47,58 @@ export function pickHardestWords(
   return picked
 }
 
+type Rated<T extends { id: string }> = {
+  item: T
+  timesSeen: number
+  rate: number
+}
+
+function rateOf<T extends { id: string }>(item: T, stats: ReadonlyMap<string, WordStat>): Rated<T> {
+  const stat = stats.get(item.id) ?? { timesSeen: 0, errorCount: 0 }
+  return {
+    item,
+    timesSeen: stat.timesSeen,
+    rate: stat.timesSeen > 0 ? stat.errorCount / stat.timesSeen : 0,
+  }
+}
+
+function byId<T extends { id: string }>(a: Rated<T>, b: Rated<T>) {
+  return a.item.id.localeCompare(b.item.id)
+}
+
+export function pickSessionWords<T extends { id: string }>(
+  words: readonly T[],
+  stats: ReadonlyMap<string, WordStat>,
+  count: number,
+  random: () => number = Math.random,
+): T[] {
+  if (count <= 0 || words.length === 0) return []
+  const ranked = words.map((item) => rateOf(item, stats)).sort((a, b) => {
+    if (a.rate !== b.rate) return a.rate - b.rate
+    if (a.timesSeen !== b.timesSeen) return a.timesSeen - b.timesSeen
+    return byId(a, b)
+  })
+  if (words.length <= count) return shuffleDeal(ranked.map((row) => row.item), random)
+
+  const easy = ranked.slice(0, Math.ceil(ranked.length / 2))
+  const hard = ranked.slice(easy.length)
+  const leastSeen = [...easy].sort((a, b) => {
+    if (a.timesSeen !== b.timesSeen) return a.timesSeen - b.timesSeen
+    if (a.rate !== b.rate) return a.rate - b.rate
+    return byId(a, b)
+  })
+  const hardest = [...hard].sort((a, b) => {
+    if (a.rate !== b.rate) return b.rate - a.rate
+    if (a.timesSeen !== b.timesSeen) return b.timesSeen - a.timesSeen
+    return byId(a, b)
+  })
+  const picked = [
+    ...leastSeen.slice(0, Math.ceil(count / 2)),
+    ...hardest.slice(0, Math.floor(count / 2)),
+  ]
+  return shuffleDeal(picked.map((row) => row.item), random)
+}
+
 export type TeacherLevel = {
   level: number
   words: number
