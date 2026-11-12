@@ -208,7 +208,8 @@
     "giveUp": "Give up",
     "match": "Match the word and the translation",
     "invaders": "Tap a falling word and the gun with its translation. Either one first. A wrong pair only flashes. A word that reaches the guns is lost.",
-    "labyrinth": "Drag from a word through the open cells to its translation. A right path stays. A wrong exit snaps back, and that word is a miss."
+    "labyrinth": "Drag from a word through the open cells to its translation. A right path stays. A wrong exit snaps back, and that word is a miss.",
+    "neon": "Translations fly in one at a time. Hit the square only when the right one lands. Q W E · A S D · Z X C."
   },
   "teacher": {
     "purse": "Purse {{purse}}",
@@ -236,6 +237,7 @@
     "blitz": "Blitz",
     "invaders": "Raid",
     "labyrinth": "Labyrinth",
+    "neon": "Neon",
     "teacher": "Word Teacher"
   },
   "skins": {

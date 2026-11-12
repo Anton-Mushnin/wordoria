@@ -204,7 +204,8 @@
     "giveUp": "Luovuta",
     "match": "Yhdistä sana ja käännös",
     "invaders": "Napauta putoavaa sanaa ja tykkiä, jossa on sen käännös. Kumpi tahansa ensin. Väärä pari vain välähtää. Tykeille ehtinyt sana on menetetty.",
-    "labyrinth": "Vedä sanasta polku avoimia ruutuja pitkin sen käännökseen. Oikea polku jää. Väärä uloskäynti peruuntuu, ja sana on virhe."
+    "labyrinth": "Vedä sanasta polku avoimia ruutuja pitkin sen käännökseen. Oikea polku jää. Väärä uloskäynti peruuntuu, ja sana on virhe.",
+    "neon": "Käännökset tulevat yksi kerrallaan. Lyö ruutua vain, kun oikea saapuu. Q W E · A S D · Z X C."
   },
   "teacher": {
     "purse": "Kassa {{purse}}",
@@ -232,6 +233,7 @@
     "blitz": "Salama",
     "invaders": "Hyökkäys",
     "labyrinth": "Labyrintti",
+    "neon": "Neon",
     "teacher": "Word Teacher"
   },
   "skins": {

@@ -8,6 +8,7 @@ const games = {
   blitz: 'games.blitz',
   invaders: 'games.invaders',
   labyrinth: 'games.labyrinth',
+  neon: 'games.neon',
   teacher: 'games.teacher',
 } as const
 

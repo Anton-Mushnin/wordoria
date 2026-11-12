@@ -4,6 +4,7 @@ import { PenLine } from '../components/Marks.tsx'
 import { InvadersExercise } from './invaders.tsx'
 import { TeacherExercise } from './teacher.tsx'
 import { LabyrinthExercise } from './labyrinth.tsx'
+import { NeonExercise } from './neon.tsx'
 
 export type WordCard = { id: string; term: string; translation: string }
 export type TypedAnswer = { wordId: string; typed: string; timeMs: number }
@@ -299,6 +300,7 @@ export function GameExercise({
     return <TeacherExercise sessionId={sessionId} words={words} onSubmit={onSubmit} submitting={submitting} />
   }
   if (gameId === 'labyrinth') return <LabyrinthExercise words={words} onSubmit={onSubmit} submitting={submitting} />
+  if (gameId === 'neon') return <NeonExercise words={words} onSubmit={onSubmit} submitting={submitting} />
   return (
     <LineExercise
       sessionId={sessionId}

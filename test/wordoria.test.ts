@@ -280,6 +280,7 @@ test('каждая игра получает свою колоду', () => {
   assert.equal(app.startSolo(player.id, list.id, 'flashcards').input.words.length, 10)
   assert.equal(app.startSolo(player.id, list.id, 'invaders').input.words.length, 12)
   assert.equal(app.startSolo(player.id, list.id, 'labyrinth').input.words.length, 5)
+  assert.equal(app.startSolo(player.id, list.id, 'neon').input.words.length, 12)
 })
 
 test('повтор уже собранного скина превращается в деньги', () => {

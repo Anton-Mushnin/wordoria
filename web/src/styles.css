@@ -78,7 +78,7 @@ a.button {
     box-shadow 0.16s ease;
 }
 
-button:hover:not(.quiet, .tile, .invaders-ship, .invaders-gun, .labyrinth-word),
+button:hover:not(.quiet, .tile, .invaders-ship, .invaders-gun, .labyrinth-word, .neon-cell),
 a.button:hover {
   background: var(--gold-hot);
   transform: translateY(-1px);
@@ -87,7 +87,7 @@ a.button:hover {
     0 12px 28px rgba(226, 164, 35, 0.26);
 }
 
-button:active:not(.quiet, .tile, .invaders-ship, .invaders-gun, .labyrinth-word),
+button:active:not(.quiet, .tile, .invaders-ship, .invaders-gun, .labyrinth-word, .neon-cell),
 a.button:active {
   background: var(--gold-press);
   color: var(--ink-on-gold);
@@ -208,7 +208,7 @@ a.quiet:active {
   animation: rise 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-.page > :not(.invaders, .labyrinth, .crt, .stamp) {
+.page > :not(.invaders, .labyrinth, .crt, .stamp, .neon) {
   animation: rise 0.65s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 

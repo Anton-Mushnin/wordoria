@@ -8,5 +8,6 @@ export const GAMES: GameDefinition[] = [
   { id: 'blitz', name: 'Блиц', costIv: 20, modes: ['solo', 'multi'], words: 10 },
   { id: 'invaders', name: 'Налёт', costIv: 15, modes: ['solo', 'multi'], words: 12 },
   { id: 'labyrinth', name: 'Лабиринт', costIv: 15, modes: ['solo', 'multi'], words: 5 },
+  { id: 'neon', name: 'Неон', costIv: 15, modes: ['solo', 'multi'], words: 12 },
   { id: 'teacher', name: 'Word Teacher', costIv: 12, modes: ['solo'], words: 10 },
 ]
