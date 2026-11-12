@@ -4,7 +4,6 @@ import type { TypedAnswer, WordCard } from './exercises.tsx'
 import './neon.css'
 
 const KEYS = ['q', 'w', 'e', 'a', 's', 'd', 'z', 'x', 'c']
-const CODES = ['KeyQ', 'KeyW', 'KeyE', 'KeyA', 'KeyS', 'KeyD', 'KeyZ', 'KeyX', 'KeyC']
 const FIRST_MS = 3600
 const LAST_MS = 2600
 const HIT_MS = 140
@@ -139,8 +138,8 @@ export function NeonExercise({
   const flyRefs = useRef<(HTMLDivElement | null)[]>([])
   const ringRefs = useRef<(HTMLSpanElement | null)[]>([])
   const cellRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const hoveredRef = useRef<number | null>(null)
   const judgeRef = useRef<(kind: 'hit' | 'miss', timeMs: number) => void>(() => {})
-  const pressRef = useRef<(cell: number) => void>(() => {})
   const drawRef = useRef<(progress: number, frozen: boolean) => void>(() => {})
 
   noteRef.current = note
@@ -223,16 +222,6 @@ export function NeonExercise({
     timers.current.push(id)
   }
 
-  function press(cell: number) {
-    const current = noteRef.current
-    if (locked.current || sent.current || submittingRef.current || current.verdict) return
-    const { step: active, local, live } = place(current, performance.now())
-    const flyer = current.flyers[active]
-    if (!live || !flyer) return
-    const onTime = flyer.correct && flyer.cell === cell && Math.abs(local - current.duration) <= HIT_MS
-    judge(onTime ? 'hit' : 'miss', local)
-  }
-
   function reveal(active: number) {
     if (stepRef.current === active && showingRef.current) return
     stepRef.current = active
@@ -242,7 +231,6 @@ export function NeonExercise({
   }
 
   judgeRef.current = judge
-  pressRef.current = press
   drawRef.current = draw
 
   useLayoutEffect(() => {
@@ -257,15 +245,6 @@ export function NeonExercise({
     const media = window.matchMedia('(prefers-reduced-motion: reduce)')
     const onMotion = () => setStill(media.matches)
     media.addEventListener('change', onMotion)
-
-    const onKey = (event: KeyboardEvent) => {
-      if (event.repeat || event.metaKey || event.ctrlKey || event.altKey) return
-      const cell = CODES.indexOf(event.code)
-      if (cell < 0) return
-      event.preventDefault()
-      pressRef.current(cell)
-    }
-    window.addEventListener('keydown', onKey)
 
     let frame = 0
     let alive = true
@@ -297,6 +276,10 @@ export function NeonExercise({
         return
       }
       reveal(active)
+      if (Math.abs(local - current.duration) <= HIT_MS && hoveredRef.current === flyer.cell) {
+        judgeRef.current(flyer.correct ? 'hit' : 'miss', local)
+        return
+      }
       drawRef.current(local / current.duration, false)
     }
     frame = window.requestAnimationFrame(tick)
@@ -315,7 +298,6 @@ export function NeonExercise({
       alive = false
       mounted.current = false
       media.removeEventListener('change', onMotion)
-      window.removeEventListener('keydown', onKey)
       window.cancelAnimationFrame(frame)
       observer?.disconnect()
       for (const id of timers.current) window.clearTimeout(id)
@@ -367,7 +349,12 @@ export function NeonExercise({
               }}
               className={['neon-cell', index === active?.cell && note.verdict === 'hit' ? 'is-hit' : ''].filter(Boolean).join(' ')}
               aria-disabled={submitting || note.verdict !== null}
-              onClick={() => press(index)}
+              onPointerEnter={() => {
+                hoveredRef.current = index
+              }}
+              onPointerLeave={() => {
+                if (hoveredRef.current === index) hoveredRef.current = null
+              }}
             >
               <span className="neon-key">{key}</span>
             </button>

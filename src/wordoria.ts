@@ -25,7 +25,7 @@ import type {
   WordListView,
   WordStat,
 } from './types.ts'
-import { pickHardestWords, pickSessionWords } from './words.ts'
+import { pickHardestWords, pickSessionWords, rememberAttempt } from './words.ts'
 
 type PlayerRecord = {
   id: string
@@ -535,7 +535,7 @@ export class Wordoria {
   }
 
   private getStat(playerId: string, wordId: string): WordStat {
-    return this.stats.get(this.statKey(playerId, wordId)) ?? { timesSeen: 0, errorCount: 0 }
+    return this.stats.get(this.statKey(playerId, wordId)) ?? { timesSeen: 0, errorCount: 0, recent: [] }
   }
 
   private bumpStats(playerId: string, answers: Answer[]) {
@@ -544,6 +544,7 @@ export class Wordoria {
       this.stats.set(this.statKey(playerId, answer.wordId), {
         timesSeen: current.timesSeen + 1,
         errorCount: current.errorCount + (answer.correct ? 0 : 1),
+        recent: rememberAttempt(current.recent, answer.correct),
       })
     }
   }

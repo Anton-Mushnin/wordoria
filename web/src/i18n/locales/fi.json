@@ -205,7 +205,7 @@
     "match": "Yhdistä sana ja käännös",
     "invaders": "Napauta putoavaa sanaa ja tykkiä, jossa on sen käännös. Kumpi tahansa ensin. Väärä pari vain välähtää. Tykeille ehtinyt sana on menetetty.",
     "labyrinth": "Vedä sanasta polku avoimia ruutuja pitkin sen käännökseen. Oikea polku jää. Väärä uloskäynti peruuntuu, ja sana on virhe.",
-    "neon": "Käännökset tulevat yksi kerrallaan. Lyö ruutua vain, kun oikea saapuu. Q W E · A S D · Z X C."
+    "neon": "Käännökset tulevat yksi kerrallaan. Vie osoitin ruudun päälle sen saapuessa. Vain oikea lasketaan."
   },
   "teacher": {
     "purse": "Kassa {{purse}}",

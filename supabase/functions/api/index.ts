@@ -11,7 +11,7 @@ import {
   sessionPoints,
   wordScore,
 } from '../../../src/scoring.ts'
-import type { Answer } from '../../../src/types.ts'
+import type { Answer, WordStat } from '../../../src/types.ts'
 import { pickHardestWords, pickSessionWords, teacherDeal, teacherLevel } from '../../../src/words.ts'
 
 class ApiError extends Error {
@@ -39,7 +39,7 @@ const sql = postgres(databaseUrl(), {
 type Tx = postgres.TransactionSql
 type Row = postgres.Row
 type WordRow = { id: string; term: string; translation: string }
-type StatSnap = Record<string, { timesSeen: number; errorCount: number }>
+type StatSnap = Record<string, WordStat>
 type Reward =
   | { type: 'skin'; skinId: string; name: string }
   | { type: 'money'; amount: number }
@@ -374,10 +374,10 @@ async function lootboxStart(tx: Tx, userId: string, body: Record<string, unknown
     where wl.source = 'server' or wl.owner_id = ${userId}
   `
   if (pool.length === 0) throw new ApiError('NO_WORDS', 'Нет слов для испытания')
-  const statRows = await tx<{ word_id: string; times_seen: number; error_count: number }[]>`
-    select word_id, times_seen, error_count from word_stats where player_id = ${userId}
+  const statRows = await tx<{ word_id: string; times_seen: number; error_count: number; recent: unknown }[]>`
+    select word_id, times_seen, error_count, recent from word_stats where player_id = ${userId}
   `
-  const stats = new Map(statRows.map((row) => [row.word_id, { timesSeen: row.times_seen, errorCount: row.error_count }]))
+  const stats = new Map(statRows.map((row) => [row.word_id, statFromRow(row)]))
   const picked = pickHardestWords(pool, stats, Math.min(ECONOMY.lootboxWordCount, pool.length), ECONOMY.minSeenForHardness)
   await tx`
     update lootboxes
@@ -547,26 +547,49 @@ async function ledger(
   `
 }
 
+function readRecent(value: unknown): number[] {
+  const raw = Array.isArray(value)
+    ? value
+    : typeof value === 'string'
+      ? value.replace(/^\{|\}$/g, '').split(',').filter(Boolean)
+      : []
+  return raw.map(Number).filter((mark) => mark === 0 || mark === 1).slice(-3)
+}
+
+function statFromRow(row: { times_seen: number; error_count: number; recent: unknown }): WordStat {
+  return { timesSeen: row.times_seen, errorCount: row.error_count, recent: readRecent(row.recent) }
+}
+
 async function snapshot(tx: Tx, playerId: string, wordIds: string[]): Promise<StatSnap> {
-  const rows = await tx<{ word_id: string; times_seen: number; error_count: number }[]>`
-    select word_id, times_seen, error_count from word_stats where player_id = ${playerId}
+  const rows = await tx<{ word_id: string; times_seen: number; error_count: number; recent: unknown }[]>`
+    select word_id, times_seen, error_count, recent from word_stats where player_id = ${playerId}
   `
   const stats: StatSnap = {}
-  for (const wordId of wordIds) stats[wordId] = { timesSeen: 0, errorCount: 0 }
+  for (const wordId of wordIds) stats[wordId] = { timesSeen: 0, errorCount: 0, recent: [] }
   for (const row of rows) {
-    if (stats[row.word_id]) stats[row.word_id] = { timesSeen: row.times_seen, errorCount: row.error_count }
+    if (stats[row.word_id]) stats[row.word_id] = statFromRow(row)
   }
   return stats
 }
 
 async function bumpStats(tx: Tx, playerId: string, answers: Answer[]) {
   for (const answer of answers) {
+    const mark = answer.correct ? 0 : 1
     await tx`
-      insert into word_stats (player_id, word_id, times_seen, error_count)
-      values (${playerId}, ${answer.wordId}, 1, ${answer.correct ? 0 : 1})
+      insert into word_stats (player_id, word_id, times_seen, error_count, recent)
+      values (${playerId}, ${answer.wordId}, 1, ${mark}, array[${mark}]::smallint[])
       on conflict (player_id, word_id) do update
       set times_seen = word_stats.times_seen + 1,
-          error_count = word_stats.error_count + excluded.error_count
+          error_count = word_stats.error_count + excluded.error_count,
+          recent = (
+            select coalesce(array_agg(outcome order by ord), '{}'::smallint[])
+            from (
+              select outcome, ord
+              from unnest(word_stats.recent || excluded.recent) with ordinality as attempt(outcome, ord)
+              order by ord desc
+              limit 3
+            ) last_three
+          )
     `
   }
 }

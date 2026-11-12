@@ -10,7 +10,7 @@ export function pickHardestWords(
 
   const rows = words.map((word) => ({
     word,
-    stat: stats.get(word.id) ?? { timesSeen: 0, errorCount: 0 },
+    stat: stats.get(word.id) ?? emptyStat(),
   }))
 
   const qualified = rows
@@ -47,23 +47,42 @@ export function pickHardestWords(
   return picked
 }
 
-type Rated<T extends { id: string }> = {
-  item: T
-  timesSeen: number
-  rate: number
+const BRACKETS = ['hard', 'steady', 'fresh'] as const
+type Bracket = (typeof BRACKETS)[number]
+const BRACKET_SHARES: Record<Bracket, number> = { hard: 5, steady: 4, fresh: 1 }
+const RECENT_WINDOW = 3
+
+function emptyStat(): WordStat {
+  return { timesSeen: 0, errorCount: 0, recent: [] }
 }
 
-function rateOf<T extends { id: string }>(item: T, stats: ReadonlyMap<string, WordStat>): Rated<T> {
-  const stat = stats.get(item.id) ?? { timesSeen: 0, errorCount: 0 }
-  return {
-    item,
-    timesSeen: stat.timesSeen,
-    rate: stat.timesSeen > 0 ? stat.errorCount / stat.timesSeen : 0,
+export function rememberAttempt(recent: readonly number[] | undefined, correct: boolean): number[] {
+  return [...(recent ?? []), correct ? 0 : 1].slice(-RECENT_WINDOW)
+}
+
+function bracketOf(stat: WordStat | undefined): Bracket {
+  const window = (stat?.recent ?? []).slice(-RECENT_WINDOW)
+  if (window.length === 0) return 'fresh'
+  const errors = window.reduce((total, mark) => total + (mark > 0 ? 1 : 0), 0)
+  return errors / window.length > 1 / 3 ? 'hard' : 'steady'
+}
+
+function bracketQuotas(count: number): Record<Bracket, number> {
+  const quotas: Record<Bracket, number> = { hard: 0, steady: 0, fresh: 0 }
+  let left = count
+  const remainders = BRACKETS.map((name) => {
+    const floor = Math.floor((count * BRACKET_SHARES[name]) / 10)
+    quotas[name] = floor
+    left -= floor
+    return { name, remainder: (count * BRACKET_SHARES[name]) % 10 }
+  })
+  remainders.sort((a, b) => b.remainder - a.remainder || BRACKETS.indexOf(a.name) - BRACKETS.indexOf(b.name))
+  for (const part of remainders) {
+    if (left <= 0) break
+    quotas[part.name] += 1
+    left -= 1
   }
-}
-
-function byId<T extends { id: string }>(a: Rated<T>, b: Rated<T>) {
-  return a.item.id.localeCompare(b.item.id)
+  return quotas
 }
 
 export function pickSessionWords<T extends { id: string }>(
@@ -73,30 +92,30 @@ export function pickSessionWords<T extends { id: string }>(
   random: () => number = Math.random,
 ): T[] {
   if (count <= 0 || words.length === 0) return []
-  const ranked = words.map((item) => rateOf(item, stats)).sort((a, b) => {
-    if (a.rate !== b.rate) return a.rate - b.rate
-    if (a.timesSeen !== b.timesSeen) return a.timesSeen - b.timesSeen
-    return byId(a, b)
-  })
-  if (words.length <= count) return shuffleDeal(ranked.map((row) => row.item), random)
+  if (words.length <= count) return shuffleDeal(words, random)
 
-  const easy = ranked.slice(0, Math.ceil(ranked.length / 2))
-  const hard = ranked.slice(easy.length)
-  const leastSeen = [...easy].sort((a, b) => {
-    if (a.timesSeen !== b.timesSeen) return a.timesSeen - b.timesSeen
-    if (a.rate !== b.rate) return a.rate - b.rate
-    return byId(a, b)
-  })
-  const hardest = [...hard].sort((a, b) => {
-    if (a.rate !== b.rate) return b.rate - a.rate
-    if (a.timesSeen !== b.timesSeen) return b.timesSeen - a.timesSeen
-    return byId(a, b)
-  })
-  const picked = [
-    ...leastSeen.slice(0, Math.ceil(count / 2)),
-    ...hardest.slice(0, Math.floor(count / 2)),
-  ]
-  return shuffleDeal(picked.map((row) => row.item), random)
+  const pools: Record<Bracket, T[]> = { hard: [], steady: [], fresh: [] }
+  for (const word of words) pools[bracketOf(stats.get(word.id))].push(word)
+  for (const name of BRACKETS) pools[name] = shuffleDeal(pools[name], random)
+
+  const quotas = bracketQuotas(count)
+  const picked: T[] = []
+  let carry = 0
+  for (const name of BRACKETS) {
+    const need = quotas[name] + carry
+    const take = pools[name].splice(0, need)
+    picked.push(...take)
+    carry = need - take.length
+  }
+  if (carry > 0) {
+    for (const name of ['steady', 'hard'] as const) {
+      const take = pools[name].splice(0, carry)
+      picked.push(...take)
+      carry -= take.length
+      if (carry <= 0) break
+    }
+  }
+  return shuffleDeal(picked, random)
 }
 
 export type TeacherLevel = {

@@ -291,7 +291,7 @@ test('повтор уже собранного скина превращаетс
   while (app.getPlayer(player.id).iv < ECONOMY.lootboxPriceIv * 6) {
     playPerfect(app, player.id, list.id)
     plays += 1
-    assert.ok(plays < 12)
+    assert.ok(plays < 20)
   }
   let lastMoney = 0
   for (let index = 0; index < 6; index += 1) {

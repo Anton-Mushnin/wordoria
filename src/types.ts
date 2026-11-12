@@ -14,6 +14,7 @@ export type WordDraft = {
 export type WordStat = {
   timesSeen: number
   errorCount: number
+  recent: number[]
 }
 
 export type Answer = {
